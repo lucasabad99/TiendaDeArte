@@ -170,3 +170,27 @@ Dominio ──────────────► Hostinger, apuntando front
 5. [ ] Roles (superadmin aparte + owner/manager/editor/customer) y panel admin
 6. [ ] Mercado Pago (Checkout Pro) + webhook
 7. [ ] Deploy + dominio + HTTPS
+
+## 8. Info real a pedir (al final)
+
+Contenido:
+- [ ] Obras: fotos, título, técnica, medidas, año, precio, stock (original o edición)
+- [ ] Bio y foto de la artista, textos de portada
+- [ ] Marca: nombre, logo, colores
+- [ ] Redes (Instagram, etc.) y datos de contacto
+
+Mail de la tienda (formulario de contacto):
+```
+ La tienda ENVÍA y RECIBE desde su propia cuenta
+   SMTP_USER  = mail de la tienda          ┐ login para enviar
+   SMTP_PASS  = contraseña de ESA cuenta   ┘ (Gmail: contraseña de aplicación,
+                                              Hostinger: la de la casilla)
+   MAIL_FROM  = Taller de Arte <mail de la tienda>
+   CONTACT_TO = mail de la tienda (o el personal de la artista)
+```
+- [ ] ¿Gmail propio de la tienda o mail con dominio (Hostinger)?
+- [ ] Antes de publicar: borrar la contraseña de aplicación de prueba (cuenta de Lucas)
+
+Pagos y legales:
+- [ ] Cuenta de Mercado Pago de la artista
+- [ ] Política de envíos y costos, devoluciones, términos
