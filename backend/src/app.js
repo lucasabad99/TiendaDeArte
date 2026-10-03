@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 
 const env = require('./config/env');
 const routes = require('./routes');
@@ -11,6 +12,7 @@ const app = express();
 if (env.isProd) app.set('trust proxy', 1);
 
 app.use(express.json({ limit: '20kb' }));
+app.use(cookieParser());
 
 app.use(
   cors({

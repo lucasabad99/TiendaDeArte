@@ -50,15 +50,18 @@ function carritoReducer(items, accion) {
 export function CartProvider({ children }) {
   const [obras, setObras] = useState([])
   const [cargando, setCargando] = useState(true)
+  const [errorCarga, setErrorCarga] = useState(false)
   const [items, dispatch] = useReducer(carritoReducer, [], () => leerStorage(CARRITO_KEY, []))
   const [abierto, setAbierto] = useState(false)
 
   useEffect(() => {
-    getObras().then((data) => {
-      setObras(data)
-      dispatch({ type: 'ajustarAlStock', obras: data })
-      setCargando(false)
-    })
+    getObras()
+      .then((data) => {
+        setObras(data)
+        dispatch({ type: 'ajustarAlStock', obras: data })
+      })
+      .catch(() => setErrorCarga(true)) // backend caído: no vaciamos el carrito guardado
+      .finally(() => setCargando(false))
   }, [])
 
   useEffect(() => {
@@ -104,12 +107,12 @@ export function CartProvider({ children }) {
 
   const valor = useMemo(
     () => ({
-      obras, cargando, items, totalUnidades, total, abierto,
+      obras, cargando, errorCarga, items, totalUnidades, total, abierto,
       abrirCarrito: () => setAbierto(true),
       cerrarCarrito: () => setAbierto(false),
       agregar, quitar, vaciar, cambiarCantidad, disponible, cantidadEnCarrito, finalizarCompra,
     }),
-    [obras, cargando, items, totalUnidades, total, abierto, agregar, quitar, vaciar, cambiarCantidad, disponible, cantidadEnCarrito, finalizarCompra],
+    [obras, cargando, errorCarga, items, totalUnidades, total, abierto, agregar, quitar, vaciar, cambiarCantidad, disponible, cantidadEnCarrito, finalizarCompra],
   )
 
   return <CartContext.Provider value={valor}>{children}</CartContext.Provider>

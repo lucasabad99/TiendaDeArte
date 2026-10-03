@@ -1,26 +1,20 @@
-// Capa de datos de las obras. HOY: datos ficticios + stock simulado en localStorage.
-// MAÑANA: estas mismas funciones llaman al Backend I y el resto de la app no cambia.
-//
-//   getObras()        -> GET  {API}/api/products
-//   confirmarCompra() -> POST {API}/api/carts/:cid/purchase   (a crear en el back)
+// Capa de datos de las obras.
+//   getObras()        -> GET {API}/products  (real, desde el backend)
+//   confirmarCompra() -> SIMULADA por ahora. Próximo paso: POST {API}/carts/:cid/purchase,
+//                        donde el servidor valida y descuenta el stock (el front nunca es la fuente de verdad).
 
-import { obras as obrasMock } from '../data/obras'
-import { leerStorage, guardarStorage } from '../utils/formato'
-
-const STOCK_KEY = 'tienda-arte:stock'
+const API_URL = import.meta.env.VITE_API_URL
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms))
 
 export async function getObras() {
-  await esperar(300) // simula la latencia de red
-  const stockGuardado = leerStorage(STOCK_KEY, {})
-  return obrasMock.map((obra) => ({
-    ...obra,
-    stock: stockGuardado[obra._id] ?? obra.stock,
-  }))
+  const respuesta = await fetch(`${API_URL}/products`)
+  const cuerpo = await respuesta.json().catch(() => ({}))
+  if (!respuesta.ok) throw new Error(cuerpo.message || `Error ${respuesta.status}`)
+  return cuerpo.data
 }
 
-// Valida stock y lo descuenta. En el back real esto lo hace el servidor
-// (el front nunca es la fuente de verdad del stock).
+// Simulación: valida contra el stock que se ve en pantalla y lo descuenta solo en memoria.
+// Al recargar la página vuelve el stock real del backend.
 export async function confirmarCompra(items, obrasActuales) {
   await esperar(600)
   const sinStock = items.filter((item) => {
@@ -31,20 +25,10 @@ export async function confirmarCompra(items, obrasActuales) {
     return { ok: false, sinStock: sinStock.map((i) => i.title) }
   }
 
-  const stockGuardado = leerStorage(STOCK_KEY, {})
   const obrasNuevas = obrasActuales.map((obra) => {
     const item = items.find((i) => i._id === obra._id)
-    if (!item) return obra
-    const stock = obra.stock - item.cantidad
-    stockGuardado[obra._id] = stock
-    return { ...obra, stock }
+    return item ? { ...obra, stock: obra.stock - item.cantidad } : obra
   })
-  guardarStorage(STOCK_KEY, stockGuardado)
 
   return { ok: true, orden: `ORD-${Date.now().toString().slice(-6)}`, obras: obrasNuevas }
-}
-
-// Solo para desarrollo: vuelve el stock al de los datos ficticios.
-export function resetearStock() {
-  guardarStorage(STOCK_KEY, {})
 }

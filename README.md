@@ -15,7 +15,8 @@ docs/       diagramas y plan
 # 1) Backend
 cd backend
 npm install
-copy .env.example .env      # solo la primera vez
+copy .env.example .env      # solo la primera vez (completar MONGO_URI, JWT_SECRET, SUPERADMIN_*)
+npm run seed                # solo la primera vez: crea el superadmin y obras de ejemplo
 npm run dev
 
 # 2) Frontend
@@ -24,7 +25,7 @@ npm install
 npm run dev
 ```
 
-Requiere Node 22.15 o superior.
+Requiere Node 22.15 o superior y MongoDB (local en `mongodb://127.0.0.1:27017` o Atlas).
 
 ## Formulario de contacto en desarrollo
 

@@ -3,7 +3,7 @@ import { useCarrito } from '../context/CartContext'
 import ObraCard from './ObraCard'
 
 export default function Galeria() {
-  const { obras, cargando } = useCarrito()
+  const { obras, cargando, errorCarga } = useCarrito()
   const [categoria, setCategoria] = useState('Todas')
 
   const categorias = ['Todas', ...new Set(obras.map((o) => o.category))]
@@ -34,6 +34,8 @@ export default function Galeria() {
               <div key={i} className="card card--esqueleto" />
             ))}
           </div>
+        ) : errorCarga ? (
+          <p className="aviso aviso--error">No se pudieron cargar las obras. Probá recargar la página en un rato.</p>
         ) : (
           <div className="grilla">
             {visibles.map((obra) => (

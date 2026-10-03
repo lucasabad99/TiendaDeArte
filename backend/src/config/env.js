@@ -21,6 +21,11 @@ const env = {
   isProd,
   PORT: parseInt(process.env.PORT || '8080', 10),
 
+  MONGO_URI: requerida('MONGO_URI'),
+
+  JWT_SECRET: requerida('JWT_SECRET'),
+  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '1d',
+
   // Orígenes permitidos por CORS, separados por coma
   CLIENT_URLS: (process.env.CLIENT_URL || 'http://localhost:5173')
     .split(',')

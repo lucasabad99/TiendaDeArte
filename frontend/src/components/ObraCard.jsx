@@ -1,10 +1,9 @@
 import { useCarrito } from '../context/CartContext'
 import { formatearPrecio } from '../utils/formato'
 
-// Las láminas son ediciones (varias copias); el resto son originales únicos.
-// Cuando el back tenga un campo propio (ej. "tipo": "original" | "edicion"), se usa ese.
+// "tipo" viene del back: original = pieza única, edicion = láminas / copias numeradas.
 function etiquetaStock(obra) {
-  const esEdicion = obra.category === 'Láminas'
+  const esEdicion = obra.tipo === 'edicion'
   if (obra.stock === 0) return { texto: 'Vendida', clase: 'tag--agotada' }
   if (!esEdicion) return { texto: 'Pieza única', clase: 'tag--unica' }
   if (obra.stock === 1) return { texto: 'Última disponible', clase: 'tag--unica' }

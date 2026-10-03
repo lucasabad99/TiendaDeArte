@@ -58,39 +58,46 @@ Regla: disponible = stock − cantidad en el carrito.
 Hoy el stock vive en el front (simulado). En producción **el servidor es la
 fuente de verdad**: el front solo muestra y el back valida al comprar.
 
-## 4. Backend (reutilizando lo que ya existe)
+## 4. Backend (/backend — unifica Backend I y II)
 
 ```
-Backend I  (backend-lubad/proyecto-final)      Backend II (Backend-II/auth-hibrido)
-  GET    /products  ← catálogo (pasar a /api)    POST /api/v1/auth/register
-  GET    /products/:pid                          POST /api/v1/auth/login
-  POST   /api/carts                              POST /api/v1/auth/logout
-  PUT    /api/carts/:cid/products/:pid           GET  /api/v1/auth/github
-  DELETE /api/carts/:cid/products/:pid           GET  /api/v1/admin  (JWT + admin)
-                                                 → para el panel admin de ella
-  A CREAR:
-  POST   /api/carts/:cid/purchase  (valida y descuenta stock, crea orden)
-  POST   /api/payments/preference  (Mercado Pago)
-  POST   /api/payments/webhook     (MP avisa el pago aprobado)
-  POST   /api/v1/contacto          (envía mail) ✓ HECHO en /backend
+ HECHO (base: /api/v1)
+  POST   /contacto                 envía mail (nodemailer)            público
+  POST   /auth/register            crea SIEMPRE customer              público
+  POST   /auth/login               JWT en cookie httpOnly + en body   público
+  POST   /auth/logout
+  GET    /auth/me                                                    JWT
+  GET    /products                 solo publicadas (status: true)     público
+  GET    /products/:pid                                              público
+  POST   /products                                                   products:write
+  PATCH  /products/:pid            precio/stock/status: products:price products:write
+  DELETE /products/:pid                                              products:delete
+  GET    /users                                                      users:read
+  PATCH  /users/:id/role                                             users:assignRole
+
+ A CREAR
+  carts      POST /carts, PUT /carts/:cid/products/:pid ...  (de Backend I)
+  POST   /carts/:cid/purchase      valida y descuenta stock, crea orden
+  POST   /payments/preference      Mercado Pago
+  POST   /payments/webhook         MP avisa el pago aprobado
+  GET    /products?todas=1         listado con borradores para el panel
+  /platform/*                      panel del superadmin
 ```
 
-Plan: unir ambos en UN solo backend (productos + carritos + auth admin).
-
-## 5. Base de datos (MongoDB Atlas)
+## 5. Base de datos (MongoDB: local en desarrollo, Atlas en producción)
 
 ```
-products                 carts                      orders (nueva)
+products  ✓              carts                      orders (nueva)
 ─────────                ─────                      ──────
 _id                      _id                        _id, code
 title                    products: [                items: [{product, qty, price}]
 description                { product → products,    total
 price                        quantity }             buyer: {nombre, email, tel}
 category                 ]                          status: pendiente|pagada|enviada
-stock                                               mpPaymentId
-thumbnails[]                                        createdAt
-status                   users (Backend II)
-                         email, password, role: admin|user
+tipo: original|edicion                              mpPaymentId
+stock                    users  ✓                   createdAt
+thumbnails[]             name, email, password (bcrypt)
+status (false=borrador)  role: superadmin|owner|manager|editor|customer
 ```
 
 ## 5b. Roles y permisos
@@ -122,34 +129,37 @@ la compra). El superadmin nunca se crea ni se asigna desde la página.
    invitado  → mirar y comprar sin cuenta
 ```
 
-Permisos por acción (el back chequea el **permiso**, no el nombre del rol):
+Permisos por acción (el back chequea el **permiso**, no el nombre del rol).
+Fuente de verdad en código: `backend/src/config/permisos.js`.
 
 ```
  permiso             superadmin  owner  manager  editor  customer
  ─────────────────── ─────────── ────── ──────── ─────── ────────
- products:write          ✓         ✓       ✓        ✓
+ products:write          ✓         ✓       ✓        ✓²
  products:price          ✓         ✓       ✓
+ products:delete         ✓         ✓       ✓
  orders:read/update      ✓         ✓       ✓
- users:assignRole        ✓         ✓¹
+ users:read              ✓         ✓
+ users:assignRole        ✓¹        ✓¹
  settings:store          ✓         ✓
  platform:*              ✓
  orders:own                                                 ✓
- ¹ solo puede asignar manager/editor, nunca owner ni superadmin
+ ¹ superadmin asigna owner/manager/editor/customer; owner solo manager/editor/customer
+   y solo a usuarios que tengan uno de esos roles. Nadie otorga superadmin por la API
+   ni cambia su propio rol.
+ ² el editor crea obras como borrador oculto (sin precio ni stock) y edita textos;
+   precio, stock y publicar requieren products:price.
 ```
 
 ```
  request ─► authJwt ─► can('products:write') ─► controller
-                         │ busca el rol del token en la tabla de permisos
-                         └─ NO ─► 403
+              │ lee el rol de la BASE (no del token): un cambio de rol
+              │ o una baja tienen efecto inmediato
+              └─ sin permiso ─► 403
 ```
 
-Cambios sobre Backend II:
-- `role` pasa a `enum: ['superadmin','owner','manager','editor','customer']`.
-- **Quitar** `role` del body en `POST /auth/register` (hoy cualquiera se
-  registra como admin mandando `"role":"admin"`).
-- `authRole('admin')` → `can('permiso')` con un mapa `permisos.js`.
-- `PATCH /api/v1/users/:id/role` (owner/superadmin) con la regla ¹.
-- Seed `npm run seed:superadmin` que lee `SUPERADMIN_EMAIL` del `.env`.
+Superadmin: `npm run seed` lo crea con `SUPERADMIN_EMAIL` / `SUPERADMIN_PASSWORD`
+del `.env` (y carga obras de ejemplo si la base está vacía).
 
 ## 6. Despliegue
 
@@ -165,9 +175,9 @@ Dominio ──────────────► Hostinger, apuntando front
 
 1. [x] Front: landing, cards ficticias, formulario, carrito con stock
 2. [ ] Recibir info real (obras, fotos, textos, marca)
-3. [~] Backend unificado (base + contacto listos en /backend) + MongoDB Atlas + endpoint de compra
-4. [ ] Conectar front ↔ back (solo `services/`)
-5. [ ] Roles (superadmin aparte + owner/manager/editor/customer) y panel admin
+3. [~] Backend unificado: contacto ✓, productos ✓, auth y roles ✓ · falta carrito y compra
+4. [~] Conectar front ↔ back: contacto ✓, galería ✓ · falta compra
+5. [~] Roles ✓ (API) · falta login en el front y panel admin
 6. [ ] Mercado Pago (Checkout Pro) + webhook
 7. [ ] Deploy + dominio + HTTPS
 
