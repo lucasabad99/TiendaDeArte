@@ -10,9 +10,8 @@ function errorHandler(err, req, res, next) {
     return res.status(400).json({ status: 'error', code: 400, message: 'Datos inválidos' });
   }
 
-  console.error('[error]', err);
-
   const status = err.status || 500;
+  if (status >= 500) console.error('[error]', err);
   const body = {
     status: 'error',
     code: status,

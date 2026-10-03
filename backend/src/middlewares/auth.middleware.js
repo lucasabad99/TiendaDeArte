@@ -28,6 +28,20 @@ async function authJwt(req, res, next) {
   }
 }
 
+// Para rutas públicas que se comportan distinto si hay sesión (ej. comprar con o sin cuenta).
+// Un token inválido o vencido no corta el request: se sigue como invitado.
+async function authOpcional(req, res, next) {
+  const token = leerToken(req);
+  if (!token) return next();
+  try {
+    const { userId } = verificarToken(token);
+    req.user = (await User.findById(userId)) || undefined;
+  } catch {
+    req.user = undefined;
+  }
+  next();
+}
+
 // Uso: router.post('/', authJwt, can('products:write'), controller)
 function can(permiso) {
   return function (req, res, next) {
@@ -41,4 +55,4 @@ function can(permiso) {
   };
 }
 
-module.exports = { authJwt, can };
+module.exports = { authJwt, authOpcional, can };

@@ -44,19 +44,26 @@ services/  ← ÚNICO lugar que cambia al conectar el back (en frontend/src/)
  [Agregar] ──► ¿cantidad en carrito + 1 <= stock? ──NO──► botón "Ver en el carrito"
                          │ SÍ
                          ▼
-                 se suma al carrito (se guarda en localStorage)
+                 se suma al carrito (localStorage del navegador)
                          │
- [Finalizar compra] ──► servicio revalida stock ──NO──► "Sin stock suficiente"
-                         │ SÍ
-                         ▼
-                 descuenta stock ─► vacía carrito ─► muestra Nº de orden
+ [Finalizar compra] ──► formulario: nombre, email, teléfono, nota
                          │
-                 (después) ─► redirige a Mercado Pago
+ [Confirmar pedido] ──► POST /orders { items: [{productId, cantidad}], comprador }
+                         │  servidor: precios y títulos desde la BASE (no del front)
+                         │  descuento atómico: stock >= cantidad  y  stock -= cantidad
+                         │  en una sola operación (dos compras de la última pieza:
+                         │  gana una sola). Si una obra falla, se devuelve todo.
+                 ┌───────┴────────┐
+              409 sin stock     201 creada (status: pendiente = stock reservado)
+                 │                 │
+       recarga obras y          vacía carrito, recarga obras,
+       recorta el carrito       muestra Nº de pedido, mail a tienda y comprador
+                                   │
+                         (después) ─► Mercado Pago ─► webhook ─► status: pagada
 ```
 
-Regla: disponible = stock − cantidad en el carrito.
-Hoy el stock vive en el front (simulado). En producción **el servidor es la
-fuente de verdad**: el front solo muestra y el back valida al comprar.
+Cancelar una orden (panel) devuelve el stock, una sola vez aunque se cancele
+dos veces a la vez.
 
 ## 4. Backend (/backend — unifica Backend I y II)
 
@@ -74,10 +81,13 @@ fuente de verdad**: el front solo muestra y el back valida al comprar.
   DELETE /products/:pid                                              products:delete
   GET    /users                                                      users:read
   PATCH  /users/:id/role                                             users:assignRole
+  POST   /orders                   valida y descuenta stock, crea      público (con sesión
+                                   la orden y manda 2 mails            queda asociada)
+  GET    /orders/mine              mis pedidos                         JWT
+  GET    /orders?status=…                                            orders:read
+  PATCH  /orders/:id/status        cancelar devuelve el stock          orders:update
 
  A CREAR
-  carts      POST /carts, PUT /carts/:cid/products/:pid ...  (de Backend I)
-  POST   /carts/:cid/purchase      valida y descuenta stock, crea orden
   POST   /payments/preference      Mercado Pago
   POST   /payments/webhook         MP avisa el pago aprobado
   GET    /products?todas=1         listado con borradores para el panel
@@ -87,17 +97,17 @@ fuente de verdad**: el front solo muestra y el back valida al comprar.
 ## 5. Base de datos (MongoDB: local en desarrollo, Atlas en producción)
 
 ```
-products  ✓              carts                      orders (nueva)
+products  ✓              users  ✓                   orders  ✓
 ─────────                ─────                      ──────
-_id                      _id                        _id, code
-title                    products: [                items: [{product, qty, price}]
-description                { product → products,    total
-price                        quantity }             buyer: {nombre, email, tel}
-category                 ]                          status: pendiente|pagada|enviada
-tipo: original|edicion                              mpPaymentId
-stock                    users  ✓                   createdAt
-thumbnails[]             name, email, password (bcrypt)
-status (false=borrador)  role: superadmin|owner|manager|editor|customer
+_id                      name, email                code: ORD-XXXXXX
+title                    password (bcrypt)          items: [{product, title, price, cantidad}]
+description              role: superadmin|owner|    total   (precios del servidor)
+price                      manager|editor|customer  comprador: {nombre, email, telefono, nota}
+category                                            user (si compró logueado)
+tipo: original|edicion                              status: pendiente|pagada|enviada|
+stock                                                       entregada|cancelada
+thumbnails[]                                        mpPaymentId
+status (false=borrador)                             createdAt
 ```
 
 ## 5b. Roles y permisos
@@ -175,8 +185,8 @@ Dominio ──────────────► Hostinger, apuntando front
 
 1. [x] Front: landing, cards ficticias, formulario, carrito con stock
 2. [ ] Recibir info real (obras, fotos, textos, marca)
-3. [~] Backend unificado: contacto ✓, productos ✓, auth y roles ✓ · falta carrito y compra
-4. [~] Conectar front ↔ back: contacto ✓, galería ✓ · falta compra
+3. [x] Backend unificado: contacto, productos, auth y roles, pedidos con stock real
+4. [x] Conectar front ↔ back: contacto, galería, checkout
 5. [~] Roles ✓ (API) · falta login en el front y panel admin
 6. [ ] Mercado Pago (Checkout Pro) + webhook
 7. [ ] Deploy + dominio + HTTPS

@@ -54,15 +54,21 @@ export function CartProvider({ children }) {
   const [items, dispatch] = useReducer(carritoReducer, [], () => leerStorage(CARRITO_KEY, []))
   const [abierto, setAbierto] = useState(false)
 
-  useEffect(() => {
-    getObras()
-      .then((data) => {
+  // Trae las obras del back y recorta el carrito si el stock bajó
+  const recargarObras = useCallback(
+    () =>
+      getObras().then((data) => {
         setObras(data)
         dispatch({ type: 'ajustarAlStock', obras: data })
-      })
+      }),
+    [],
+  )
+
+  useEffect(() => {
+    recargarObras()
       .catch(() => setErrorCarga(true)) // backend caído: no vaciamos el carrito guardado
       .finally(() => setCargando(false))
-  }, [])
+  }, [recargarObras])
 
   useEffect(() => {
     guardarStorage(CARRITO_KEY, items)
@@ -93,14 +99,17 @@ export function CartProvider({ children }) {
     [obras],
   )
 
-  const finalizarCompra = useCallback(async () => {
-    const resultado = await confirmarCompra(items, obras)
-    if (resultado.ok) {
-      setObras(resultado.obras)
-      dispatch({ type: 'vaciar' })
-    }
-    return resultado
-  }, [items, obras])
+  // El servidor valida y descuenta el stock. Después recargamos las obras para mostrar el stock real:
+  // si hubo compra, baja; si faltó stock, el carrito se recorta solo con ajustarAlStock.
+  const finalizarCompra = useCallback(
+    async (comprador) => {
+      const resultado = await confirmarCompra(items, comprador)
+      if (resultado.ok) dispatch({ type: 'vaciar' })
+      await recargarObras().catch(() => {})
+      return resultado
+    },
+    [items, recargarObras],
+  )
 
   const totalUnidades = items.reduce((acc, i) => acc + i.cantidad, 0)
   const total = items.reduce((acc, i) => acc + i.cantidad * i.price, 0)

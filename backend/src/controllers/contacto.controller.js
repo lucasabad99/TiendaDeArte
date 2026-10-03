@@ -1,4 +1,5 @@
 const mailService = require('../services/mail.service');
+const { EMAIL_RE, TELEFONO_RE, texto } = require('../utils/validacion');
 
 const MOTIVOS = {
   consulta: 'Consulta por una obra',
@@ -10,7 +11,6 @@ const MOTIVOS = {
 // Mismas reglas que el formulario del front: nunca confiamos solo en la validación del navegador.
 function validar(body) {
   const errores = {};
-  const texto = (v) => (typeof v === 'string' ? v.trim() : '');
 
   const datos = {
     nombre: texto(body.nombre),
@@ -21,8 +21,8 @@ function validar(body) {
   };
 
   if (datos.nombre.length < 2 || datos.nombre.length > 100) errores.nombre = 'Nombre inválido.';
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(datos.email) || datos.email.length > 200) errores.email = 'Email inválido.';
-  if (datos.telefono && !/^[\d\s+()-]{6,20}$/.test(datos.telefono)) errores.telefono = 'Teléfono inválido.';
+  if (!EMAIL_RE.test(datos.email) || datos.email.length > 200) errores.email = 'Email inválido.';
+  if (datos.telefono && !TELEFONO_RE.test(datos.telefono)) errores.telefono = 'Teléfono inválido.';
   if (!MOTIVOS[datos.motivo]) datos.motivo = 'otro';
   if (datos.mensaje.length < 10 || datos.mensaje.length > 5000) errores.mensaje = 'El mensaje debe tener entre 10 y 5000 caracteres.';
 

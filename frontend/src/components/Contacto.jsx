@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { enviarConsulta } from '../services/contactoService'
+import { validarPersona } from '../utils/validacion'
 
 const INICIAL = { nombre: '', email: '', telefono: '', motivo: 'consulta', mensaje: '', website: '' }
 
 function validar(datos) {
-  const errores = {}
-  if (datos.nombre.trim().length < 2) errores.nombre = 'Ingresá tu nombre.'
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(datos.email)) errores.email = 'Ingresá un email válido.'
-  if (datos.telefono && !/^[\d\s+()-]{6,20}$/.test(datos.telefono)) errores.telefono = 'Teléfono inválido.'
+  const errores = validarPersona(datos)
   if (datos.mensaje.trim().length < 10) errores.mensaje = 'Contame un poco más (mínimo 10 caracteres).'
   return errores
 }

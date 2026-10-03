@@ -189,6 +189,10 @@ button:disabled { cursor: not-allowed; }
 .drawer__exito { font-family: var(--font-titulo); font-size: 1.8rem; color: var(--ok); }
 .drawer__pie { border-top: 1px solid var(--border); padding: 20px 24px; display: flex; flex-direction: column; gap: 12px; align-items: center; }
 .drawer__total { display: flex; justify-content: space-between; width: 100%; font-size: 1.1rem; }
+.checkout { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.checkout__cuerpo { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+.checkout__resumen { margin: 0; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.checkout .drawer__pie .aviso { width: 100%; }
 
 .item { display: grid; grid-template-columns: 72px 1fr auto; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--border); align-items: start; }
 .item img { width: 72px; height: 90px; object-fit: cover; border-radius: 6px; }

@@ -27,6 +27,17 @@ npm run dev
 
 Requiere Node 22.15 o superior y MongoDB (local en `mongodb://127.0.0.1:27017` o Atlas).
 
+## Pruebas automáticas (con el backend corriendo)
+
+```powershell
+cd backend
+npm run test:roles     # auth, roles y permisos (34 casos)
+npm run test:orders    # compra, stock, compras simultáneas, estados (33 casos)
+```
+
+Crean datos de prueba y los borran al final. `test:orders` manda mails de pedido:
+si tenés Gmail configurado, levantá el backend con `SMTP_HOST` vacío para usar Ethereal.
+
 ## Formulario de contacto en desarrollo
 
 Sin SMTP en `backend/.env`, los mails van a **Ethereal** (SMTP de prueba, no

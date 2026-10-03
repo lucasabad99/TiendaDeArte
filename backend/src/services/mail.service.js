@@ -33,14 +33,23 @@ function getTransporter() {
 }
 
 const escapar = (s) =>
-  s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+const pesos = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
+
+const TIENDA = () => env.CONTACT_TO || 'artista@tallerdearte.local';
+
+async function enviar(opciones) {
+  const transporter = await getTransporter();
+  const info = await transporter.sendMail({ from: env.MAIL_FROM, ...opciones });
+  const vistaPrevia = nodemailer.getTestMessageUrl(info);
+  if (vistaPrevia) console.log(`[mail] Ver el mail de prueba: ${vistaPrevia}`);
+  return info;
+}
 
 async function enviarConsulta({ nombre, email, telefono, motivoTexto, mensaje }) {
-  const transporter = await getTransporter();
-
-  const info = await transporter.sendMail({
-    from: env.MAIL_FROM,
-    to: env.CONTACT_TO || 'artista@tallerdearte.local',
+  return enviar({
+    to: TIENDA(),
     replyTo: `${nombre} <${email}>`, // "Responder" en el mail le contesta directo a quien escribió
     subject: `[Web] ${motivoTexto} — ${nombre}`,
     text: [
@@ -59,11 +68,65 @@ async function enviarConsulta({ nombre, email, telefono, motivoTexto, mensaje })
       <p style="white-space:pre-wrap">${escapar(mensaje)}</p>
     `,
   });
-
-  const vistaPrevia = nodemailer.getTestMessageUrl(info);
-  if (vistaPrevia) console.log(`[mail] Ver el mail de prueba: ${vistaPrevia}`);
-
-  return info;
 }
 
-module.exports = { enviarConsulta };
+function detallePedido(orden) {
+  const lineas = orden.items.map((i) => `${i.cantidad} × ${i.title} — ${pesos.format(i.price * i.cantidad)}`);
+  const text = [...lineas, '', `Total: ${pesos.format(orden.total)}`].join('\n');
+  const html = `
+    <table cellpadding="6" style="border-collapse:collapse">
+      ${orden.items
+        .map((i) => `<tr><td>${i.cantidad} ×</td><td>${escapar(i.title)}</td><td align="right">${pesos.format(i.price * i.cantidad)}</td></tr>`)
+        .join('')}
+      <tr><td></td><td><strong>Total</strong></td><td align="right"><strong>${pesos.format(orden.total)}</strong></td></tr>
+    </table>`;
+  return { text, html };
+}
+
+// Dos mails por pedido: aviso a la tienda y confirmación al comprador.
+async function enviarAvisosPedido(orden) {
+  const { nombre, email, telefono, nota } = orden.comprador;
+  const detalle = detallePedido(orden);
+
+  const aTienda = enviar({
+    to: TIENDA(),
+    replyTo: `${nombre} <${email}>`,
+    subject: `[Web] Nuevo pedido ${orden.code} — ${nombre}`,
+    text: [
+      `Pedido ${orden.code}`,
+      `Comprador: ${nombre} · ${email} · ${telefono || 'sin teléfono'}`,
+      nota ? `Nota: ${nota}` : '',
+      '',
+      detalle.text,
+    ].join('\n'),
+    html: `
+      <p><strong>Pedido ${escapar(orden.code)}</strong><br>
+      <strong>Comprador:</strong> ${escapar(nombre)} · ${escapar(email)} · ${escapar(telefono || 'sin teléfono')}</p>
+      ${nota ? `<p><strong>Nota:</strong> <span style="white-space:pre-wrap">${escapar(nota)}</span></p>` : ''}
+      ${detalle.html}
+    `,
+  });
+
+  const aComprador = enviar({
+    to: `${nombre} <${email}>`,
+    replyTo: TIENDA(),
+    subject: `Recibimos tu pedido ${orden.code} — Taller de Arte`,
+    text: [
+      `Hola ${nombre}, ¡gracias por tu compra!`,
+      '',
+      detalle.text,
+      '',
+      'Te escribimos a la brevedad para coordinar el pago y el envío.',
+    ].join('\n'),
+    html: `
+      <p>Hola ${escapar(nombre)}, ¡gracias por tu compra!</p>
+      <p>Número de pedido: <strong>${escapar(orden.code)}</strong></p>
+      ${detalle.html}
+      <p>Te escribimos a la brevedad para coordinar el pago y el envío.</p>
+    `,
+  });
+
+  return Promise.all([aTienda, aComprador]);
+}
+
+module.exports = { enviarConsulta, enviarAvisosPedido };
