@@ -1,0 +1,10 @@
+# Hostinger (Apache): cualquier ruta que no sea un archivo real (ej. /admin/pedidos)
+# se sirve con index.html, así React Router la resuelve. Sin esto, recargar en /admin da 404.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>

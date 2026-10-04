@@ -27,6 +27,13 @@ npm run dev
 
 Requiere Node 22.15 o superior y MongoDB (local en `mongodb://127.0.0.1:27017` o Atlas).
 
+## Panel admin
+
+Con las dos terminales corriendo: http://localhost:5173/admin (o "Ingresar" en el pie
+de la tienda). El superadmin entra con `SUPERADMIN_EMAIL` / `SUPERADMIN_PASSWORD`
+de `backend/.env`. Quien se registra desde ahí entra como cliente; los roles se dan
+en la pestaña Usuarios.
+
 ## Pruebas automáticas (con el backend corriendo)
 
 ```powershell

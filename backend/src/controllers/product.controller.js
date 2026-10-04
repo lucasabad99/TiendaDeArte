@@ -25,6 +25,16 @@ async function listar(req, res, next) {
   }
 }
 
+// Panel: todas las obras, incluidos borradores (status: false)
+async function listarTodas(req, res, next) {
+  try {
+    const products = await Product.find().sort({ createdAt: -1 });
+    return res.status(200).json({ status: 'success', code: 200, data: products });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function obtener(req, res, next) {
   try {
     const { pid } = req.params;
@@ -88,4 +98,4 @@ async function eliminar(req, res, next) {
   }
 }
 
-module.exports = { listar, obtener, crear, actualizar, eliminar };
+module.exports = { listar, listarTodas, obtener, crear, actualizar, eliminar };

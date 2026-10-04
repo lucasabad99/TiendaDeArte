@@ -24,6 +24,7 @@ router.get('/', (req, res) => {
       'POST   /api/v1/auth/logout',
       'GET    /api/v1/auth/me              (JWT)',
       'GET    /api/v1/products',
+      'GET    /api/v1/products/all         (products:write; incluye borradores)',
       'GET    /api/v1/products/:pid',
       'POST   /api/v1/products             (products:write)',
       'PATCH  /api/v1/products/:pid        (products:write; precio/stock/status: products:price)',

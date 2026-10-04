@@ -75,6 +75,7 @@ dos veces a la vez.
   POST   /auth/logout
   GET    /auth/me                                                    JWT
   GET    /products                 solo publicadas (status: true)     público
+  GET    /products/all             incluye borradores (panel)          products:write
   GET    /products/:pid                                              público
   POST   /products                                                   products:write
   PATCH  /products/:pid            precio/stock/status: products:price products:write
@@ -90,7 +91,7 @@ dos veces a la vez.
  A CREAR
   POST   /payments/preference      Mercado Pago
   POST   /payments/webhook         MP avisa el pago aprobado
-  GET    /products?todas=1         listado con borradores para el panel
+  subida de imágenes (Cloudinary)   hoy las fotos se cargan por link
   /platform/*                      panel del superadmin
 ```
 
@@ -171,6 +172,23 @@ Fuente de verdad en código: `backend/src/config/permisos.js`.
 Superadmin: `npm run seed` lo crea con `SUPERADMIN_EMAIL` / `SUPERADMIN_PASSWORD`
 del `.env` (y carga obras de ejemplo si la base está vacía).
 
+## 5c. Panel admin (/admin)
+
+```
+ /admin ─► ¿sesión? (GET /auth/me, cookie httpOnly) ──NO──► Login / Crear cuenta
+              │ SÍ: el back devuelve user + acceso { permisos, rolesAsignables }
+              ▼
+ pestañas según permiso:
+   Pedidos      orders:read     filtros por estado · pagada / enviada / entregada / cancelar
+   Obras        products:write  crear · editar · publicar/ocultar (products:price) · borrar (products:delete)
+   Usuarios     users:read      cambiar rol (solo a roles de rolesAsignables)
+   Mis pedidos  orders:own      solo para quien no tiene orders:read (clientes)
+```
+
+El front solo **oculta** lo que el rol no puede usar; el back vuelve a chequear
+cada permiso. En producción (Hostinger) `frontend/public/.htaccess` hace que
+`/admin/...` funcione al recargar.
+
 ## 6. Despliegue
 
 ```
@@ -187,7 +205,7 @@ Dominio ──────────────► Hostinger, apuntando front
 2. [ ] Recibir info real (obras, fotos, textos, marca)
 3. [x] Backend unificado: contacto, productos, auth y roles, pedidos con stock real
 4. [x] Conectar front ↔ back: contacto, galería, checkout
-5. [~] Roles ✓ (API) · falta login en el front y panel admin
+5. [x] Roles + panel admin en /admin (login, pedidos, obras, usuarios, mis pedidos)
 6. [ ] Mercado Pago (Checkout Pro) + webhook
 7. [ ] Deploy + dominio + HTTPS
 

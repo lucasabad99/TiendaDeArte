@@ -1,3 +1,5 @@
+import { Link } from 'react-router'
+
 const ANIO = new Date().getFullYear()
 
 export default function Footer() {
@@ -8,6 +10,7 @@ export default function Footer() {
         <nav className="footer__links">
           <a href="https://instagram.com" target="_blank" rel="noreferrer">Instagram</a>
           <a href="#contacto">Contacto</a>
+          <Link to="/admin">Ingresar</Link>
         </nav>
         <small>© {ANIO} Taller de Arte. Todos los derechos reservados.</small>
       </div>

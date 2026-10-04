@@ -1,25 +1,16 @@
-import { CartProvider } from './context/CartContext'
-import Navbar from './components/Navbar'
-import Hero from './components/Hero'
-import Galeria from './components/Galeria'
-import SobreMi from './components/SobreMi'
-import Contacto from './components/Contacto'
-import Footer from './components/Footer'
-import CarritoDrawer from './components/CarritoDrawer'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router'
+import Tienda from './pages/Tienda'
+import AdminApp from './admin/AdminApp'
 
 function App() {
   return (
-    <CartProvider>
-      <Navbar />
-      <main>
-        <Hero />
-        <Galeria />
-        <SobreMi />
-        <Contacto />
-      </main>
-      <Footer />
-      <CarritoDrawer />
-    </CartProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Tienda />} />
+        <Route path="/admin/*" element={<AdminApp />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 

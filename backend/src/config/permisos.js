@@ -34,4 +34,10 @@ function puedeAsignar(actorRole, targetRoleActual, rolNuevo) {
   return asignables.includes(targetRoleActual) && asignables.includes(rolNuevo);
 }
 
-module.exports = { ROLES, PERMISOS, tienePermiso, puedeAsignar };
+// Lo que el front necesita saber para mostrar u ocultar secciones y botones.
+// La seguridad real sigue estando en el back: cada ruta vuelve a chequear el permiso.
+function accesoDe(role) {
+  return { permisos: PERMISOS[role] || [], rolesAsignables: ASIGNABLES[role] || [] };
+}
+
+module.exports = { ROLES, PERMISOS, tienePermiso, puedeAsignar, accesoDe };

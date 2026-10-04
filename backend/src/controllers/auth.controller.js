@@ -1,5 +1,6 @@
 const User = require('../models/User.model');
 const { firmarToken, cookieOptionsAuth } = require('../utils/jwt.util');
+const { accesoDe } = require('../config/permisos');
 
 // Registro público: SIEMPRE crea un customer. El rol que venga en el body se ignora
 // (en Backend II cualquiera podía registrarse como admin mandando "role":"admin").
@@ -43,7 +44,12 @@ async function login(req, res, next) {
     const token = firmarToken(user);
     res.cookie('authToken', token, cookieOptionsAuth());
 
-    return res.status(200).json({ status: 'success', code: 200, message: 'Login exitoso', data: { token, user } });
+    return res.status(200).json({
+      status: 'success',
+      code: 200,
+      message: 'Login exitoso',
+      data: { token, user, acceso: accesoDe(user.role) },
+    });
   } catch (err) {
     next(err);
   }
@@ -55,7 +61,7 @@ function logout(req, res) {
 }
 
 function me(req, res) {
-  return res.status(200).json({ status: 'success', code: 200, data: { user: req.user } });
+  return res.status(200).json({ status: 'success', code: 200, data: { user: req.user, acceso: accesoDe(req.user.role) } });
 }
 
 module.exports = { register, login, logout, me };
