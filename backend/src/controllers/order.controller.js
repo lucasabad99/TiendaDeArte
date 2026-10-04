@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const { Order, ESTADOS } = require('../models/Order.model');
 const orderService = require('../services/order.service');
 const mailService = require('../services/mail.service');
+const mp = require('../services/mercadopago.service');
+const env = require('../config/env');
 const { EMAIL_RE, TELEFONO_RE, texto } = require('../utils/validacion');
 
 const MAX_ITEMS = 50;
@@ -51,12 +53,31 @@ async function crear(req, res, next) {
       return res.status(400).json({ status: 'error', code: 400, message: 'Datos inválidos', errores });
     }
 
-    const orden = await orderService.crearOrden({ items, comprador, userId: req.user?._id });
+    // Con Mercado Pago, el stock queda reservado RESERVA_MINUTOS; si no se paga, se libera solo
+    const expiraEn = mp.habilitado() ? new Date(Date.now() + env.RESERVA_MINUTOS * 60 * 1000) : null;
+    const orden = await orderService.crearOrden({ items, comprador, userId: req.user?._id, expiraEn });
 
-    // Los mails no frenan la compra: si fallan, la orden ya está creada y queda en el log
-    mailService.enviarAvisosPedido(orden).catch((err) => console.error(`[mail] Pedido ${orden.code}:`, err.message));
+    let pagoUrl = null;
+    if (mp.habilitado()) {
+      try {
+        const pref = await mp.crearPreferencia(orden);
+        orden.mpPreferenceId = pref.id;
+        orden.mpInitPoint = pref.initPoint;
+        await orden.save();
+        pagoUrl = pref.initPoint;
+      } catch (err) {
+        // Sin link de pago la orden no sirve: la cancelamos y liberamos el stock
+        console.error(`[mp] No se pudo crear la preferencia de ${orden.code}:`, err?.message || JSON.stringify(err));
+        await orderService.cambiarEstado(orden._id, 'cancelada');
+        return res.status(502).json({ status: 'error', code: 502, message: 'No pudimos iniciar el pago con Mercado Pago. Probá de nuevo en unos minutos.' });
+      }
+      // Los mails salen cuando el pago se acredita (order.service → aplicarPago)
+    } else {
+      // Sin pagos online: avisamos ya y el pago se coordina a mano. Los mails no frenan la compra.
+      mailService.enviarAvisosPedido(orden).catch((err) => console.error(`[mail] Pedido ${orden.code}:`, err.message));
+    }
 
-    return res.status(201).json({ status: 'success', code: 201, message: 'Pedido creado', data: orden });
+    return res.status(201).json({ status: 'success', code: 201, message: 'Pedido creado', data: { ...orden.toJSON(), pagoUrl } });
   } catch (err) {
     if (err instanceof orderService.SinStockError) {
       return res.status(409).json({ status: 'error', code: 409, message: err.message, sinStock: err.sinStock });
@@ -102,4 +123,17 @@ async function cambiarEstado(req, res, next) {
   }
 }
 
-module.exports = { crear, listar, mias, cambiarEstado };
+// POST /orders/:id/sincronizar — "Consultar pago" del panel: le pregunta a MP ahora mismo
+async function sincronizar(req, res, next) {
+  try {
+    if (!mp.habilitado()) return res.status(400).json({ status: 'error', code: 400, message: 'Mercado Pago no está configurado.' });
+    let orden = mongoose.isValidObjectId(req.params.id) ? await Order.findById(req.params.id) : null;
+    if (!orden) return res.status(404).json({ status: 'error', code: 404, message: 'Orden no encontrada' });
+    if (orden.status === 'pendiente') orden = await orderService.sincronizarConMP(orden, mp);
+    return res.status(200).json({ status: 'success', code: 200, data: orden });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { crear, listar, mias, cambiarEstado, sincronizar };

@@ -20,5 +20,6 @@ router.post('/', limitePedidos, authOpcional, orderController.crear);
 router.get('/mine', authJwt, orderController.mias);
 router.get('/', authJwt, can('orders:read'), orderController.listar);
 router.patch('/:id/status', authJwt, can('orders:update'), orderController.cambiarEstado);
+router.post('/:id/sincronizar', authJwt, can('orders:read'), orderController.sincronizar);
 
 module.exports = router;

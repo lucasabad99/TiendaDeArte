@@ -12,7 +12,8 @@ export async function getObras() {
 }
 
 // Del carrito solo mandamos qué obras y cuántas: el precio lo decide el servidor.
-// Devuelve { ok: true, orden } | { ok: false, sinStock: [títulos] }. Otros errores: lanza.
+// Devuelve { ok: true, orden, pagoUrl } | { ok: false, sinStock: [títulos] }. Otros errores: lanza.
+// pagoUrl: link de Mercado Pago (null si la tienda no tiene pagos online: se coordina a mano).
 export async function confirmarCompra(items, comprador) {
   const respuesta = await fetch(`${API_URL}/orders`, {
     method: 'POST',
@@ -26,5 +27,5 @@ export async function confirmarCompra(items, comprador) {
   const cuerpo = await respuesta.json().catch(() => ({}))
   if (respuesta.status === 409) return { ok: false, sinStock: cuerpo.sinStock ?? [] }
   if (!respuesta.ok) throw new Error(cuerpo.message || `Error ${respuesta.status}`)
-  return { ok: true, orden: cuerpo.data.code, total: cuerpo.data.total }
+  return { ok: true, orden: cuerpo.data.code, total: cuerpo.data.total, pagoUrl: cuerpo.data.pagoUrl }
 }

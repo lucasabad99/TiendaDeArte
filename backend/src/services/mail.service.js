@@ -84,23 +84,27 @@ function detallePedido(orden) {
 }
 
 // Dos mails por pedido: aviso a la tienda y confirmación al comprador.
-async function enviarAvisosPedido(orden) {
+// pagado: true cuando el pago ya se acreditó por Mercado Pago (si no, se coordina a mano).
+async function enviarAvisosPedido(orden, { pagado = false } = {}) {
   const { nombre, email, telefono, nota } = orden.comprador;
   const detalle = detallePedido(orden);
+  const siguiente = pagado
+    ? 'Tu pago ya está acreditado. Te escribimos a la brevedad para coordinar el envío.'
+    : 'Te escribimos a la brevedad para coordinar el pago y el envío.';
 
   const aTienda = enviar({
     to: TIENDA(),
     replyTo: `${nombre} <${email}>`,
-    subject: `[Web] Nuevo pedido ${orden.code} — ${nombre}`,
+    subject: `[Web] ${pagado ? 'Pedido PAGADO' : 'Nuevo pedido'} ${orden.code} — ${nombre}`,
     text: [
-      `Pedido ${orden.code}`,
+      `Pedido ${orden.code}${pagado ? ` — PAGADO por Mercado Pago (pago ${orden.mpPaymentId})` : ''}`,
       `Comprador: ${nombre} · ${email} · ${telefono || 'sin teléfono'}`,
       nota ? `Nota: ${nota}` : '',
       '',
       detalle.text,
     ].join('\n'),
     html: `
-      <p><strong>Pedido ${escapar(orden.code)}</strong><br>
+      <p><strong>Pedido ${escapar(orden.code)}</strong>${pagado ? ` — <strong style="color:#2f7a4f">PAGADO</strong> por Mercado Pago (pago ${escapar(orden.mpPaymentId)})` : ''}<br>
       <strong>Comprador:</strong> ${escapar(nombre)} · ${escapar(email)} · ${escapar(telefono || 'sin teléfono')}</p>
       ${nota ? `<p><strong>Nota:</strong> <span style="white-space:pre-wrap">${escapar(nota)}</span></p>` : ''}
       ${detalle.html}
@@ -110,19 +114,19 @@ async function enviarAvisosPedido(orden) {
   const aComprador = enviar({
     to: `${nombre} <${email}>`,
     replyTo: TIENDA(),
-    subject: `Recibimos tu pedido ${orden.code} — Taller de Arte`,
+    subject: `${pagado ? 'Pago confirmado' : 'Recibimos tu pedido'} ${orden.code} — Taller de Arte`,
     text: [
       `Hola ${nombre}, ¡gracias por tu compra!`,
       '',
       detalle.text,
       '',
-      'Te escribimos a la brevedad para coordinar el pago y el envío.',
+      siguiente,
     ].join('\n'),
     html: `
       <p>Hola ${escapar(nombre)}, ¡gracias por tu compra!</p>
       <p>Número de pedido: <strong>${escapar(orden.code)}</strong></p>
       ${detalle.html}
-      <p>Te escribimos a la brevedad para coordinar el pago y el envío.</p>
+      <p>${siguiente}</p>
     `,
   });
 

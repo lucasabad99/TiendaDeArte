@@ -39,6 +39,23 @@ const env = {
   // A quién le llegan las consultas (la artista) y desde qué dirección salen
   CONTACT_TO: smtpOpcional('CONTACT_TO'),
   MAIL_FROM: process.env.MAIL_FROM || 'Taller de Arte <no-reply@tallerdearte.local>',
+
+  // Mercado Pago (opcional): sin token, los pedidos quedan "pendiente" y el pago se coordina a mano
+  MP_ACCESS_TOKEN: process.env.MP_ACCESS_TOKEN || '',
+  // Clave secreta de webhooks (panel de MP → Webhooks). Si está, se verifica la firma de cada aviso.
+  MP_WEBHOOK_SECRET: process.env.MP_WEBHOOK_SECRET || '',
+  // URL pública del backend (ej. https://api.tutienda.com). Sin ella, MP no puede mandar webhooks
+  // (en local no hace falta: el pago se confirma cuando el comprador vuelve a la tienda).
+  API_PUBLIC_URL: (process.env.API_PUBLIC_URL || '').replace(/\/$/, ''),
+  // Cuánto tiempo queda reservado el stock de un pedido sin pagar
+  RESERVA_MINUTOS: parseInt(process.env.RESERVA_MINUTOS || '30', 10),
 };
+
+// A dónde vuelve el comprador después de pagar: el primer origen de CLIENT_URL
+env.FRONT_URL = env.CLIENT_URLS[0].replace(/\/$/, '');
+
+if (env.isProd && env.MP_ACCESS_TOKEN && !env.API_PUBLIC_URL) {
+  console.warn('[env] MP_ACCESS_TOKEN sin API_PUBLIC_URL: Mercado Pago no podrá mandar webhooks.');
+}
 
 module.exports = env;

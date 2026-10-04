@@ -16,6 +16,17 @@ export const ESTADOS = {
   cancelada: 'Cancelada',
 }
 
+// Estados de un pago en Mercado Pago (los que no aprueban la orden)
+export const MP_ESTADOS = {
+  approved: 'aprobado',
+  rejected: 'rechazado',
+  in_process: 'en revisión',
+  pending: 'pendiente (ej. efectivo)',
+  authorized: 'autorizado',
+  cancelled: 'cancelado',
+  refunded: 'devuelto',
+}
+
 // Igual que TRANSICIONES en backend/src/models/Order.model.js (el back es quien valida).
 export const ACCIONES = {
   pendiente: [{ a: 'pagada', texto: 'Marcar pagada' }, { a: 'cancelada', texto: 'Cancelar' }],

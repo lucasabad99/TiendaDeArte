@@ -40,6 +40,7 @@ en la pestaña Usuarios.
 cd backend
 npm run test:roles     # auth, roles y permisos (34 casos)
 npm run test:orders    # compra, stock, compras simultáneas, estados (33 casos)
+npm run test:pagos     # lógica de Mercado Pago con pagos simulados (15 casos; no necesita el backend)
 ```
 
 Crean datos de prueba y los borran al final. `test:orders` manda mails de pedido:
@@ -52,3 +53,12 @@ llegan a nadie). Al enviar el formulario, la consola del backend muestra un link
 `[mail] Ver el mail de prueba: https://ethereal.email/message/...` para verlo.
 
 Para mails reales, completar `SMTP_*` y `CONTACT_TO` en `backend/.env`.
+
+## Mercado Pago en desarrollo
+
+Con `MP_ACCESS_TOKEN` de **prueba** en `backend/.env`, "Confirmar pedido" lleva al checkout
+de Mercado Pago. Para pagar hace falta una **cuenta compradora de prueba** (panel de MP →
+Cuentas de prueba) y una **tarjeta de prueba** (panel de MP → Tarjetas de prueba; titular
+`APRO` = aprobado, `OTHE` = rechazado). Abrí el checkout en una ventana de incógnito,
+para no estar logueado con tu cuenta real. En local Mercado Pago no vuelve solo a la
+tienda: tocá "Volver al sitio" al terminar.

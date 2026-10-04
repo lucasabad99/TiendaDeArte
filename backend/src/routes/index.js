@@ -4,6 +4,7 @@ const authRoutes = require('./auth.routes');
 const productsRoutes = require('./products.routes');
 const usersRoutes = require('./users.routes');
 const ordersRoutes = require('./orders.routes');
+const paymentsRoutes = require('./payments.routes');
 
 const router = express.Router();
 
@@ -12,6 +13,7 @@ router.use('/auth', authRoutes);
 router.use('/products', productsRoutes);
 router.use('/users', usersRoutes);
 router.use('/orders', ordersRoutes);
+router.use('/payments', paymentsRoutes);
 
 router.get('/', (req, res) => {
   res.json({
@@ -35,6 +37,9 @@ router.get('/', (req, res) => {
       'GET    /api/v1/orders/mine          (JWT)',
       'GET    /api/v1/orders               (orders:read)',
       'PATCH  /api/v1/orders/:id/status    (orders:update; cancelar devuelve el stock)',
+      'POST   /api/v1/orders/:id/sincronizar (orders:read; consulta el pago a Mercado Pago)',
+      'POST   /api/v1/payments/confirmar   (público; consulta el pago a Mercado Pago)',
+      'POST   /api/v1/payments/webhook     (Mercado Pago; firma verificada si hay MP_WEBHOOK_SECRET)',
     ],
   });
 });

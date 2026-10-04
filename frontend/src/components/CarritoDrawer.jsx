@@ -3,11 +3,11 @@ import { useCarrito } from '../context/CartContext'
 import { formatearPrecio } from '../utils/formato'
 import CheckoutForm from './CheckoutForm'
 
-const TITULOS = { carrito: 'Tu carrito', checkout: 'Tus datos', ok: '¡Gracias!' }
+const TITULOS = { carrito: 'Tu carrito', checkout: 'Tus datos', ok: '¡Gracias!', pago: 'Pago' }
 
 export default function CarritoDrawer() {
   const { items, total, totalUnidades, abierto, cerrarCarrito, cambiarCantidad, quitar, vaciar, disponible, finalizarCompra } = useCarrito()
-  const [vista, setVista] = useState('carrito') // carrito | checkout | ok
+  const [vista, setVista] = useState('carrito') // carrito | checkout | ok | pago
   const [pedido, setPedido] = useState(null) // { orden, email } de la compra confirmada
   const [sinStock, setSinStock] = useState(null) // títulos que ya no tenían stock al confirmar
 
@@ -39,7 +39,11 @@ export default function CarritoDrawer() {
 
   async function confirmar(comprador) {
     const r = await finalizarCompra(comprador) // si falla la red, lanza y CheckoutForm muestra el error
-    if (r.ok) {
+    if (r.ok && r.pagoUrl) {
+      // Pagos online: vamos a Mercado Pago, que después vuelve a /pedido/:code
+      setVista('pago')
+      window.location.assign(r.pagoUrl)
+    } else if (r.ok) {
       setPedido({ orden: r.orden, email: comprador.email })
       setVista('ok')
     } else {
@@ -57,7 +61,12 @@ export default function CarritoDrawer() {
           <button className="btn-icono" onClick={cerrar} aria-label="Cerrar carrito">✕</button>
         </div>
 
-        {vistaActual === 'ok' ? (
+        {vistaActual === 'pago' ? (
+          <div className="drawer__vacio">
+            <p className="drawer__exito">Te llevamos a Mercado Pago…</p>
+            <p className="texto-suave">Tus obras quedan reservadas mientras completás el pago.</p>
+          </div>
+        ) : vistaActual === 'ok' ? (
           <div className="drawer__vacio">
             <p className="drawer__exito">¡Pedido recibido!</p>
             <p>Número de pedido: <strong>{pedido.orden}</strong></p>

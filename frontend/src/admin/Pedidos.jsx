@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { cambiarEstadoPedido, getPedidos } from '../services/adminService'
+import { cambiarEstadoPedido, consultarPagoPedido, getPedidos } from '../services/adminService'
 import { useDatos } from './useDatos'
 import { ESTADOS } from './textos'
 import PedidoCard from './PedidoCard'
@@ -24,6 +24,22 @@ export default function Pedidos() {
       await cambiarEstadoPedido(pedido._id, nuevo)
       setAviso({ tipo: 'ok', texto: `${pedido.code}: ${ESTADOS[nuevo].toLowerCase()}.` })
       await recargar() // con filtro, el pedido puede salir de la lista
+    } catch (err) {
+      setAviso({ tipo: 'error', texto: manejarError(err) })
+    } finally {
+      setOcupado(null)
+    }
+  }
+
+  async function consultarPago(pedido) {
+    setOcupado(pedido._id)
+    setAviso(null)
+    try {
+      const actualizado = await consultarPagoPedido(pedido._id)
+      setAviso(actualizado.status === 'pagada'
+        ? { tipo: 'ok', texto: `${pedido.code}: Mercado Pago confirmó el pago. Quedó como pagada.` }
+        : { tipo: 'info', texto: `${pedido.code}: todavía no hay un pago aprobado en Mercado Pago.` })
+      await recargar()
     } catch (err) {
       setAviso({ tipo: 'error', texto: manejarError(err) })
     } finally {
@@ -56,7 +72,7 @@ export default function Pedidos() {
         <div className="admin__lista">
           {pedidos.map((p) => (
             <PedidoCard key={p._id} pedido={p} ocupado={ocupado === p._id}
-              onCambiarEstado={puede('orders:update') ? cambiarEstado : undefined} />
+              onCambiarEstado={puede('orders:update') ? cambiarEstado : undefined} onConsultarPago={consultarPago} />
           ))}
         </div>
       )}

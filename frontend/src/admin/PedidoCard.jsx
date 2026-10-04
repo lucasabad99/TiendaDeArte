@@ -1,8 +1,8 @@
 import { formatearPrecio } from '../utils/formato'
-import { ACCIONES, ESTADOS, formatearFecha } from './textos'
+import { ACCIONES, ESTADOS, MP_ESTADOS, formatearFecha } from './textos'
 
 // acciones: si viene onCambiarEstado se muestran los botones (panel); si no, solo lectura (mis pedidos).
-export default function PedidoCard({ pedido, onCambiarEstado, ocupado = false, verComprador = true }) {
+export default function PedidoCard({ pedido, onCambiarEstado, onConsultarPago, ocupado = false, verComprador = true }) {
   const { code, createdAt, status, comprador, items, total } = pedido
   const acciones = onCambiarEstado ? ACCIONES[status] : []
 
@@ -23,6 +23,15 @@ export default function PedidoCard({ pedido, onCambiarEstado, ocupado = false, v
         </p>
       )}
       {verComprador && comprador.nota && <p className="pedido__nota">“{comprador.nota}”</p>}
+      {verComprador && pedido.alerta && <p className="aviso aviso--error">⚠ {pedido.alerta}</p>}
+      {verComprador && (pedido.mpPaymentId || pedido.mpStatus) && (
+        <p className="pedido__pago texto-suave">
+          Mercado Pago: {pedido.mpPaymentId ? <>pago #{pedido.mpPaymentId} aprobado</> : <>último intento {MP_ESTADOS[pedido.mpStatus] ?? pedido.mpStatus}</>}
+        </p>
+      )}
+      {pedido.status === 'pendiente' && pedido.expiraEn && (
+        <p className="pedido__pago texto-suave">Reservado hasta {formatearFecha(pedido.expiraEn)}; si no se paga, se cancela solo.</p>
+      )}
 
       <ul className="pedido__items">
         {items.map((i) => (
@@ -39,6 +48,9 @@ export default function PedidoCard({ pedido, onCambiarEstado, ocupado = false, v
 
       {acciones.length > 0 && (
         <div className="pedido__acciones">
+          {onConsultarPago && status === 'pendiente' && pedido.mpPreferenceId && (
+            <button className="btn-texto" onClick={() => onConsultarPago(pedido)} disabled={ocupado}>Consultar pago en Mercado Pago</button>
+          )}
           {acciones.map(({ a, texto }) => (
             <button key={a} className={`btn ${a === 'cancelada' ? 'btn--secundario' : 'btn--primario'} btn--chico`}
               onClick={() => onCambiarEstado(pedido, a)} disabled={ocupado}>

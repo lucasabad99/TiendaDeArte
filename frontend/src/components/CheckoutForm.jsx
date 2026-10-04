@@ -73,7 +73,7 @@ export default function CheckoutForm({ total, unidades, onConfirmar, onVolver })
         </div>
 
         <p className="texto-suave">
-          Al confirmar reservamos las obras a tu nombre y te escribimos para coordinar el pago y el envío.
+          Al confirmar reservamos las obras a tu nombre y seguís con el pago.
         </p>
       </div>
 

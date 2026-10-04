@@ -5,6 +5,7 @@ import { api } from './api'
 export const getPedidos = (status) => api(`/orders${status ? `?status=${status}` : ''}`) // orders:read
 export const getMisPedidos = () => api('/orders/mine')
 export const cambiarEstadoPedido = (id, status) => api(`/orders/${id}/status`, { method: 'PATCH', body: { status } }) // orders:update
+export const consultarPagoPedido = (id) => api(`/orders/${id}/sincronizar`, { method: 'POST' }) // le pregunta a Mercado Pago
 
 // Obras
 export const getTodasLasObras = () => api('/products/all') // products:write (incluye borradores)

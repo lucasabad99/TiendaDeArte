@@ -36,13 +36,20 @@ const orderSchema = new mongoose.Schema(
     },
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // si compró logueado
     status: { type: String, enum: ESTADOS, default: 'pendiente' },
-    mpPaymentId: { type: String, default: null }, // lo completa el webhook de Mercado Pago
+    // Mercado Pago
+    mpPreferenceId: { type: String, default: null },
+    mpInitPoint: { type: String, default: null }, // link de pago, para reintentar si falló
+    mpPaymentId: { type: String, default: null }, // pago aprobado que cubrió la orden
+    mpStatus: { type: String, default: null }, // último estado informado por MP (approved, rejected, in_process...)
+    expiraEn: { type: Date, default: null }, // si sigue pendiente después de esto, se cancela y vuelve el stock
+    alerta: { type: String, default: null }, // algo que la tienda tiene que revisar (ej. pago tardío)
   },
   { timestamps: true }
 );
 
 orderSchema.index({ status: 1, createdAt: -1 });
 orderSchema.index({ user: 1, createdAt: -1 });
+orderSchema.index({ status: 1, expiraEn: 1 });
 
 orderSchema.methods.toJSON = function () {
   const obj = this.toObject();

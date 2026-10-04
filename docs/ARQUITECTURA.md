@@ -59,8 +59,27 @@ services/  ← ÚNICO lugar que cambia al conectar el back (en frontend/src/)
        recarga obras y          vacía carrito, recarga obras,
        recorta el carrito       muestra Nº de pedido, mail a tienda y comprador
                                    │
-                         (después) ─► Mercado Pago ─► webhook ─► status: pagada
+                         (con MP) ─► ver sección 3b
 ```
+
+## 3b. Pago con Mercado Pago (Checkout Pro)
+
+```
+ POST /orders ─► orden "pendiente", stock reservado RESERVA_MINUTOS (expiraEn)
+              └► preferencia en MP (montos del servidor, external_reference = id orden,
+                 vence junto con la reserva) ─► pagoUrl
+ front ─► window.location = pagoUrl ─► el comprador paga en MP
+ MP ─► vuelve a /pedido/:code?payment_id=…      (y en producción, webhook)
+ back ─► GET pago a MP (nunca confía en la URL) ─► ¿aprobado, ARS, monto >= total,
+         external_reference = la orden? ─► "pagada" (atómico) ─► mails "pago confirmado"
+ cada minuto ─► pendientes con expiraEn vencido: consulta MP; si no hay pago, cancela
+                y devuelve el stock
+ casos raros ─► pago menor al total, pago duplicado o pago después de cancelada:
+                la orden no cambia y queda una "alerta" visible en el panel
+```
+
+Sin `MP_ACCESS_TOKEN` todo funciona como antes (pedido pendiente, pago a mano).
+
 
 Cancelar una orden (panel) devuelve el stock, una sola vez aunque se cancele
 dos veces a la vez.
@@ -87,10 +106,10 @@ dos veces a la vez.
   GET    /orders/mine              mis pedidos                         JWT
   GET    /orders?status=…                                            orders:read
   PATCH  /orders/:id/status        cancelar devuelve el stock          orders:update
+  POST   /payments/confirmar       consulta el pago a MP y lo aplica   público
+  POST   /payments/webhook         aviso de MP (firma verificada)      Mercado Pago
 
  A CREAR
-  POST   /payments/preference      Mercado Pago
-  POST   /payments/webhook         MP avisa el pago aprobado
   subida de imágenes (Cloudinary)   hoy las fotos se cargan por link
   /platform/*                      panel del superadmin
 ```
@@ -206,7 +225,7 @@ Dominio ──────────────► Hostinger, apuntando front
 3. [x] Backend unificado: contacto, productos, auth y roles, pedidos con stock real
 4. [x] Conectar front ↔ back: contacto, galería, checkout
 5. [x] Roles + panel admin en /admin (login, pedidos, obras, usuarios, mis pedidos)
-6. [ ] Mercado Pago (Checkout Pro) + webhook
+6. [x] Mercado Pago (Checkout Pro): pago, vuelta, reservas que vencen, webhook con firma
 7. [ ] Deploy + dominio + HTTPS
 
 ## 8. Info real a pedir (al final)
@@ -230,5 +249,5 @@ Mail de la tienda (formulario de contacto):
 - [ ] Antes de publicar: borrar la contraseña de aplicación de prueba (cuenta de Lucas)
 
 Pagos y legales:
-- [ ] Cuenta de Mercado Pago de la artista
+- [ ] Cuenta de Mercado Pago de la artista: credenciales PRODUCTIVAS (MP_ACCESS_TOKEN) y clave de webhooks
 - [ ] Política de envíos y costos, devoluciones, términos
