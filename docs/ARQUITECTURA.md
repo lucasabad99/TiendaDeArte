@@ -106,11 +106,11 @@ dos veces a la vez.
   GET    /orders/mine              mis pedidos                         JWT
   GET    /orders?status=…                                            orders:read
   PATCH  /orders/:id/status        cancelar devuelve el stock          orders:update
+  POST   /uploads/imagenes         fotos → Cloudinary (multipart)      products:write
   POST   /payments/confirmar       consulta el pago a MP y lo aplica   público
   POST   /payments/webhook         aviso de MP (firma verificada)      Mercado Pago
 
  A CREAR
-  subida de imágenes (Cloudinary)   hoy las fotos se cargan por link
   /platform/*                      panel del superadmin
 ```
 
@@ -208,6 +208,22 @@ El front solo **oculta** lo que el rol no puede usar; el back vuelve a chequear
 cada permiso. En producción (Hostinger) `frontend/public/.htaccess` hace que
 `/admin/...` funcione al recargar.
 
+## 5d. Fotos de las obras (Cloudinary)
+
+```
+ Panel → "Elegir fotos" (explorador de archivos, o arrastrar) → varias a la vez
+   front: valida tipo y tamaño (≤ 10 MB) → POST /uploads/imagenes (FormData "fotos")
+   back:  multer en memoria (nada se guarda en el servidor) → Cloudinary
+          guarda hasta 2000 px, carpeta CLOUDINARY_CARPETA
+          ← URL de entrega optimizada: f_auto,q_auto,w_1600 (WebP/AVIF según navegador)
+   form:  galería → "Hacer principal" / ✕ → Guardar → thumbnails: [url, …] (la 1ª es la principal)
+```
+
+¿Por qué Cloudinary? MongoDB guarda datos, no archivos pesados, y el disco de
+Render se borra en cada reinicio. Sin `CLOUDINARY_URL` la subida queda
+desactivada y las fotos se cargan pegando un link. En staging conviene otra
+carpeta (`CLOUDINARY_CARPETA=tienda-arte/staging`).
+
 ## 6. Despliegue
 
 ```
@@ -247,6 +263,7 @@ Mail de la tienda (formulario de contacto):
 ```
 - [ ] ¿Gmail propio de la tienda o mail con dominio (Hostinger)?
 - [ ] Antes de publicar: borrar la contraseña de aplicación de prueba (cuenta de Lucas)
+- [ ] Antes de publicar: regenerar el API Secret de Cloudinary (quedó expuesto en pruebas) y usar la cuenta de la tienda
 
 Pagos y legales:
 - [ ] Cuenta de Mercado Pago de la artista: credenciales PRODUCTIVAS (MP_ACCESS_TOKEN) y clave de webhooks

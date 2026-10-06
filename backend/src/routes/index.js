@@ -5,6 +5,7 @@ const productsRoutes = require('./products.routes');
 const usersRoutes = require('./users.routes');
 const ordersRoutes = require('./orders.routes');
 const paymentsRoutes = require('./payments.routes');
+const uploadsRoutes = require('./uploads.routes');
 
 const router = express.Router();
 
@@ -14,6 +15,7 @@ router.use('/products', productsRoutes);
 router.use('/users', usersRoutes);
 router.use('/orders', ordersRoutes);
 router.use('/payments', paymentsRoutes);
+router.use('/uploads', uploadsRoutes);
 
 router.get('/', (req, res) => {
   res.json({
@@ -39,6 +41,7 @@ router.get('/', (req, res) => {
       'PATCH  /api/v1/orders/:id/status    (orders:update; cancelar devuelve el stock)',
       'POST   /api/v1/orders/:id/sincronizar (orders:read; consulta el pago a Mercado Pago)',
       'POST   /api/v1/payments/confirmar   (público; consulta el pago a Mercado Pago)',
+      'POST   /api/v1/uploads/imagenes     (products:write; multipart "fotos", sube a Cloudinary)',
       'POST   /api/v1/payments/webhook     (Mercado Pago; firma verificada si hay MP_WEBHOOK_SECRET)',
     ],
   });

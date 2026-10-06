@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import FotosObra from './FotosObra'
 
-const VACIA = { title: '', category: '', tipo: 'original', description: '', imagen: '', price: '', stock: '1', status: false }
+const VACIA = { title: '', category: '', tipo: 'original', description: '', fotos: [], price: '', stock: '1', status: false }
 
 function desdeObra(obra) {
   if (!obra) return VACIA
@@ -9,7 +10,7 @@ function desdeObra(obra) {
     category: obra.category,
     tipo: obra.tipo,
     description: obra.description,
-    imagen: obra.thumbnails[0] ?? '',
+    fotos: obra.thumbnails,
     price: String(obra.price),
     stock: String(obra.stock),
     status: obra.status,
@@ -20,7 +21,6 @@ function validar(d, puedePrecio) {
   const errores = {}
   if (!d.title.trim()) errores.title = 'Poné un título.'
   if (!d.category.trim()) errores.category = 'Poné una categoría (ej. Pintura).'
-  if (d.imagen && !/^https?:\/\/\S+$/.test(d.imagen.trim())) errores.imagen = 'Tiene que ser un link que empiece con http:// o https://'
   if (puedePrecio) {
     if (!/^\d+$/.test(d.price)) errores.price = 'Precio en pesos, sin puntos ni decimales.'
     if (!/^\d+$/.test(d.stock)) errores.stock = 'Cantidad entera (0 = vendida).'
@@ -34,10 +34,9 @@ export default function ObraForm({ obra, categorias, puedePrecio, onGuardar, onC
   const [datos, setDatos] = useState(() => desdeObra(obra))
   const [intento, setIntento] = useState(false)
   const [estado, setEstado] = useState({ tipo: 'idle' })
-  const [urlRota, setUrlRota] = useState(null) // link que el navegador no pudo cargar
+  const [subiendoFotos, setSubiendoFotos] = useState(false)
 
   const errores = validar(datos, puedePrecio)
-  const url = datos.imagen.trim()
   const error = (campo) => intento && errores[campo]
   const cambiar = (e) => {
     const { name, type, checked, value } = e.target
@@ -47,14 +46,14 @@ export default function ObraForm({ obra, categorias, puedePrecio, onGuardar, onC
   async function enviar(e) {
     e.preventDefault()
     setIntento(true)
-    if (Object.keys(errores).length > 0) return
+    if (Object.keys(errores).length > 0 || subiendoFotos) return
 
     const cuerpo = {
       title: datos.title.trim(),
       category: datos.category.trim(),
       tipo: datos.tipo,
       description: datos.description.trim(),
-      thumbnails: datos.imagen.trim() ? [datos.imagen.trim()] : [],
+      thumbnails: datos.fotos,
     }
     if (puedePrecio) Object.assign(cuerpo, { price: Number(datos.price), stock: Number(datos.stock), status: datos.status })
 
@@ -100,11 +99,7 @@ export default function ObraForm({ obra, categorias, puedePrecio, onGuardar, onC
               placeholder="Técnica · medidas · año. Ej.: Óleo sobre tela · 80 × 100 cm · 2025" />
           </div>
 
-          <div className="campo">
-            <label htmlFor="of-imagen">Link de la imagen</label>
-            <input id="of-imagen" name="imagen" type="url" value={datos.imagen} onChange={cambiar} placeholder="https://…" aria-invalid={!!error('imagen')} />
-            {error('imagen') && <span className="campo__error">{errores.imagen}</span>}
-          </div>
+          <FotosObra fotos={datos.fotos} onChange={(fotos) => setDatos((d) => ({ ...d, fotos }))} onSubiendo={setSubiendoFotos} />
 
           {puedePrecio ? (
             <>
@@ -127,19 +122,9 @@ export default function ObraForm({ obra, categorias, puedePrecio, onGuardar, onC
             </>
           ) : (
             <p className="aviso aviso--info">
-              {obra ? 'Podés corregir los textos y la imagen.' : 'La obra se guarda como borrador.'} El precio, el stock y la
+              {obra ? 'Podés corregir los textos y las fotos.' : 'La obra se guarda como borrador.'} El precio, el stock y la
               publicación los define quien administra la tienda.
             </p>
-          )}
-        </div>
-
-        <div className="obra-form__vista">
-          {!url || errores.imagen ? (
-            <div className="obra-form__sin-imagen">Sin imagen</div>
-          ) : urlRota === url ? (
-            <div className="obra-form__sin-imagen obra-form__sin-imagen--error">No se pudo cargar la imagen. Revisá el link.</div>
-          ) : (
-            <img key={url} src={url} alt="Vista previa" onError={() => setUrlRota(url)} />
           )}
         </div>
       </div>
@@ -147,8 +132,8 @@ export default function ObraForm({ obra, categorias, puedePrecio, onGuardar, onC
       {estado.tipo === 'error' && <p className="aviso aviso--error" role="alert">{estado.mensaje}</p>}
 
       <div className="obra-form__acciones">
-        <button type="submit" className="btn btn--primario" disabled={estado.tipo === 'guardando'}>
-          {estado.tipo === 'guardando' ? 'Guardando…' : 'Guardar'}
+        <button type="submit" className="btn btn--primario" disabled={estado.tipo === 'guardando' || subiendoFotos}>
+          {estado.tipo === 'guardando' ? 'Guardando…' : subiendoFotos ? 'Esperá, subiendo fotos…' : 'Guardar'}
         </button>
         <button type="button" className="btn btn--secundario" onClick={onCancelar} disabled={estado.tipo === 'guardando'}>Cancelar</button>
       </div>

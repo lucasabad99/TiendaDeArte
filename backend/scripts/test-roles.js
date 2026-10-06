@@ -34,7 +34,7 @@ async function registrarYLogin(n, extra = {}) {
 (async () => {
   console.log('Público');
   const lista = await req('GET', '/products');
-  check('GET /products devuelve las obras publicadas', lista.status === 200 && lista.body.data.length >= 8, JSON.stringify(lista.body).slice(0, 100));
+  check('GET /products devuelve solo obras publicadas', lista.status === 200 && lista.body.data.length > 0 && lista.body.data.every((p) => p.status === true), JSON.stringify(lista.body).slice(0, 100));
   const una = await req('GET', `/products/${lista.body.data[0]._id}`);
   check('GET /products/:pid devuelve una obra', una.status === 200 && una.body.data.title);
   check('GET /products/id-invalido → 404', (await req('GET', '/products/xyz')).status === 404);

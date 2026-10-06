@@ -11,14 +11,16 @@ export class ApiError extends Error {
   }
 }
 
+// body: objeto (se manda como JSON) o FormData (archivos: el navegador arma el multipart solo)
 export async function api(ruta, { method = 'GET', body } = {}) {
+  const esArchivos = body instanceof FormData
   let respuesta
   try {
     respuesta = await fetch(`${API_URL}${ruta}`, {
       method,
       credentials: 'include',
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
+      headers: body && !esArchivos ? { 'Content-Type': 'application/json' } : undefined,
+      body: esArchivos ? body : body ? JSON.stringify(body) : undefined,
     })
   } catch {
     throw new ApiError(0, 'No se pudo conectar con el servidor.')
