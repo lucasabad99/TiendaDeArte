@@ -10,7 +10,8 @@
     "seed": "node scripts/seed.js",
     "test:roles": "node scripts/test-roles.js",
     "test:orders": "node scripts/test-orders.js",
-    "test:pagos": "node --use-system-ca scripts/test-pagos.js"
+    "test:pagos": "node --use-system-ca scripts/test-pagos.js",
+    "start:render": "node scripts/seed.js; node server.js"
   },
   "author": "Lucas Abad",
   "license": "MIT",

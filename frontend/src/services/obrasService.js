@@ -2,6 +2,8 @@
 //   getObras()        -> GET  {API}/products
 //   confirmarCompra() -> POST {API}/orders  (el servidor valida y descuenta el stock y pone los precios)
 
+import { headersDeSesion } from './api'
+
 const API_URL = import.meta.env.VITE_API_URL
 
 export async function getObras() {
@@ -17,7 +19,7 @@ export async function getObras() {
 export async function confirmarCompra(items, comprador) {
   const respuesta = await fetch(`${API_URL}/orders`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headersDeSesion() },
     credentials: 'include', // si hay sesión, el pedido queda asociado al usuario
     body: JSON.stringify({
       items: items.map((i) => ({ productId: i._id, cantidad: i.cantidad })),

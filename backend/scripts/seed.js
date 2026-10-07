@@ -1,7 +1,7 @@
-// npm run seed
+// npm run seed  (en Render corre solo antes de arrancar el server: es idempotente)
 // 1) Crea el superadmin con SUPERADMIN_EMAIL / SUPERADMIN_PASSWORD del .env (si no existe).
 //    Es la ÚNICA forma de crear un superadmin: la API nunca otorga ese rol.
-// 2) Si no hay obras cargadas, carga las de ejemplo (las mismas que tenía el front).
+// 2) Si no hay obras cargadas, carga las de ejemplo (en producción solo con SEED_OBRAS=true).
 
 const mongoose = require('mongoose');
 const connectDB = require('../src/config/db');
@@ -44,6 +44,12 @@ async function seedSuperadmin() {
 }
 
 async function seedObras() {
+  // En producción (NODE_ENV=production) la tienda real arranca vacía: las obras las carga la artista.
+  // En staging se piden a propósito con SEED_OBRAS=true, para tener algo que mostrar.
+  if (process.env.NODE_ENV === 'production' && process.env.SEED_OBRAS !== 'true') {
+    console.log('[seed] Producción sin SEED_OBRAS=true: no se cargan obras de ejemplo.');
+    return;
+  }
   const cantidad = await Product.countDocuments();
   if (cantidad > 0) {
     console.log(`[seed] Ya hay ${cantidad} obras: no se cargan las de ejemplo.`);

@@ -1,0 +1,16 @@
+# Netlify: publica el front (carpeta frontend/) en cada push.
+# Las variables VITE_API_URL y VITE_AUTH_TOKEN se cargan en el panel de Netlify
+# (Site configuration → Environment variables). Guía: docs/DEPLOY.md
+[build]
+  base = "frontend"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# React Router: cualquier ruta (/admin/obras, /pedido/ORD-...) se sirve con index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

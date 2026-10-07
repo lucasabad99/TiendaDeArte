@@ -2,6 +2,7 @@
 
 Tienda online de arte con carrito: front en React + Vite, API en Node + Express.
 Arquitectura, roles y hoja de ruta: [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md).
+Publicar (staging y producción): [docs/DEPLOY.md](docs/DEPLOY.md). Resumen del proyecto en PDF: [docs/Plan-TiendaDeArte.pdf](docs/Plan-TiendaDeArte.pdf).
 
 ```
 frontend/   React + Vite  → http://localhost:5173

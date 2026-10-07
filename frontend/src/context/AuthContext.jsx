@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import * as authService from '../services/authService'
+import { guardarToken } from '../services/api'
 
 const AuthContext = createContext(null)
 const SIN_SESION = { usuario: null, acceso: null }
@@ -20,6 +21,7 @@ export function AuthProvider({ children }) {
 
   const login = useCallback(async (email, password) => {
     const d = await authService.login(email, password)
+    guardarToken(d.token) // solo si VITE_AUTH_TOKEN=true (ver services/api.js)
     setSesion({ usuario: d.user, acceso: d.acceso })
   }, [])
 
@@ -33,6 +35,7 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     await authService.logout().catch(() => {})
+    guardarToken(null)
     setSesion(SIN_SESION)
   }, [])
 
@@ -47,7 +50,10 @@ export function AuthProvider({ children }) {
 
   // Si el back responde 401 (sesión vencida o usuario borrado), volvemos al login.
   const manejarError = useCallback((err) => {
-    if (err?.status === 401) setSesion(SIN_SESION)
+    if (err?.status === 401) {
+      guardarToken(null)
+      setSesion(SIN_SESION)
+    }
     return err?.message || 'Ocurrió un error inesperado.'
   }, [])
 
