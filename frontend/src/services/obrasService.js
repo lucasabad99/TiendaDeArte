@@ -10,6 +10,9 @@ export async function getObras() {
   const respuesta = await fetch(`${API_URL}/products`)
   const cuerpo = await respuesta.json().catch(() => ({}))
   if (!respuesta.ok) throw new Error(cuerpo.message || `Error ${respuesta.status}`)
+  // Si VITE_API_URL está mal configurada, el pedido puede volver con un 200 que no es la API
+  // (ej. la página HTML del propio hosting): mejor avisar que romper toda la tienda.
+  if (!Array.isArray(cuerpo.data)) throw new Error(`Respuesta inesperada de ${API_URL}/products`)
   return cuerpo.data
 }
 
