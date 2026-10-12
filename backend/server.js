@@ -12,7 +12,8 @@ const { revisarPendientes } = require('./src/services/order.service');
     console.log(`    Entorno: ${env.NODE_ENV}`);
     console.log(`    API base: http://localhost:${env.PORT}/api/v1`);
     console.log(`    Mercado Pago: ${mp.habilitado() ? `activo (reserva de ${env.RESERVA_MINUTOS} min)` : 'desactivado (pagos a mano)'}`);
-    console.log(`    Fotos: ${imagenes.habilitado() ? 'Cloudinary activo' : 'sin Cloudinary (solo por link)'}\n`);
+    console.log(`    Fotos: ${imagenes.habilitado() ? 'Cloudinary activo' : 'sin Cloudinary (solo por link)'}`);
+    console.log(`    Mails: ${env.BREVO_API_KEY ? 'Brevo (API)' : env.SMTP_HOST ? `SMTP (${env.SMTP_HOST})` : 'Ethereal (prueba)'}\n`);
   });
 
   // Cada minuto: pedidos pendientes → ¿ya se pagaron en MP? ¿venció la reserva? (cancela y devuelve stock)

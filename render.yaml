@@ -40,6 +40,9 @@ services:
         sync: false
       - key: API_PUBLIC_URL
         sync: false
+      # Mails por la API de Brevo (Render gratis bloquea SMTP). Con esto, SMTP_* no se usan.
+      - key: BREVO_API_KEY
+        sync: false
       - key: SMTP_USER
         sync: false
       - key: SMTP_PASS

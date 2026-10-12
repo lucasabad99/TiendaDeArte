@@ -12,9 +12,12 @@ function requerida(nombre) {
   return valor;
 }
 
-// En desarrollo el SMTP es opcional: si falta, se usa una cuenta de prueba de Ethereal.
-// En producción es obligatorio (si no, los mails no llegarían a nadie).
-const smtpOpcional = (nombre) => (isProd ? requerida(nombre) : process.env[nombre]);
+// Mails: con BREVO_API_KEY se mandan por la API de Brevo (HTTPS). Hace falta en hostings que
+// bloquean SMTP, como Render gratis. Sin Brevo se usa SMTP (ej. Gmail): en desarrollo es
+// opcional (si falta, Ethereal) y en producción obligatorio, si no los mails no llegarían a nadie.
+const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
+const smtpOpcional = (nombre) => (isProd && !BREVO_API_KEY ? requerida(nombre) : process.env[nombre]);
+const enProdRequerida = (nombre) => (isProd ? requerida(nombre) : process.env[nombre]);
 
 const env = {
   NODE_ENV,
@@ -31,13 +34,14 @@ const env = {
     .split(',')
     .map((u) => u.trim()),
 
+  BREVO_API_KEY,
   SMTP_HOST: smtpOpcional('SMTP_HOST'),
   SMTP_PORT: parseInt(process.env.SMTP_PORT || '587', 10),
   SMTP_USER: smtpOpcional('SMTP_USER'),
   SMTP_PASS: smtpOpcional('SMTP_PASS'),
 
   // A quién le llegan las consultas (la artista) y desde qué dirección salen
-  CONTACT_TO: smtpOpcional('CONTACT_TO'),
+  CONTACT_TO: enProdRequerida('CONTACT_TO'),
   MAIL_FROM: process.env.MAIL_FROM || 'Taller de Arte <no-reply@tallerdearte.local>',
 
   // Mercado Pago (opcional): sin token, los pedidos quedan "pendiente" y el pago se coordina a mano

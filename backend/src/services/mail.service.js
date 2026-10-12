@@ -3,6 +3,7 @@ const env = require('../config/env');
 
 let transporterPromise = null;
 
+// Con BREVO_API_KEY los mails salen por la API de Brevo (ver enviarPorBrevo). Si no, por SMTP.
 // Se crea una sola vez. Sin SMTP configurado (solo en desarrollo) usamos Ethereal:
 // un SMTP de prueba que no entrega nada, pero deja ver cada mail en un link.
 function getTransporter() {
@@ -39,7 +40,40 @@ const pesos = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS
 
 const TIENDA = () => env.CONTACT_TO || 'artista@tallerdearte.local';
 
+// "Taller de Arte <hola@x.com>" → { name: 'Taller de Arte', email: 'hola@x.com' }
+// El email es el ÚLTIMO <…>: así un nombre escrito con "<" (ej. "Pepe <script>") no lo rompe.
+function direccion(texto) {
+  const m = String(texto).match(/^(.*)<([^<>]+)>\s*$/);
+  if (!m) return { email: String(texto).trim() };
+  const nombre = m[1].trim().replace(/^"|"$/g, '').trim();
+  return { name: nombre || undefined, email: m[2].trim() };
+}
+
+// API transaccional de Brevo: viaja por HTTPS, así que funciona donde el hosting bloquea SMTP.
+async function enviarPorBrevo({ to, replyTo, subject, text, html }) {
+  const respuesta = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: { 'api-key': env.BREVO_API_KEY, 'content-type': 'application/json', accept: 'application/json' },
+    body: JSON.stringify({
+      sender: direccion(env.MAIL_FROM),
+      to: [direccion(to)],
+      ...(replyTo ? { replyTo: direccion(replyTo) } : {}),
+      subject,
+      htmlContent: html,
+      textContent: text,
+    }),
+    signal: AbortSignal.timeout(15000),
+  });
+  const cuerpo = await respuesta.json().catch(() => ({}));
+  if (!respuesta.ok) {
+    throw new Error(`Brevo respondió ${respuesta.status}: ${cuerpo.message || cuerpo.code || 'sin detalle'}`);
+  }
+  return cuerpo; // { messageId }
+}
+
 async function enviar(opciones) {
+  if (env.BREVO_API_KEY) return enviarPorBrevo(opciones);
+
   const transporter = await getTransporter();
   const info = await transporter.sendMail({ from: env.MAIL_FROM, ...opciones });
   const vistaPrevia = nodemailer.getTestMessageUrl(info);

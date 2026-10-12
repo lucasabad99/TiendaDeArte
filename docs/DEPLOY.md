@@ -43,8 +43,9 @@ Si algún nombre está ocupado, usá otro y ajustá las variables de abajo con l
 | `MONGO_URI` | el del paso 1 |
 | `CLIENT_URL` | `https://tallerdearte-staging.netlify.app` |
 | `API_PUBLIC_URL` | `https://tiendadearte-api-staging.onrender.com` |
+| `BREVO_API_KEY` | clave de API de Brevo (los mails; Render gratis bloquea SMTP) |
 | `SMTP_USER` / `CONTACT_TO` | tu Gmail |
-| `SMTP_PASS` | contraseña de aplicación de Gmail |
+| `SMTP_PASS` | contraseña de aplicación de Gmail (no se usa si hay `BREVO_API_KEY`) |
 | `MAIL_FROM` | `Taller de Arte <tu-gmail>` |
 | `MP_ACCESS_TOKEN` | el de **prueba** (el mismo de tu `.env`) |
 | `CLOUDINARY_URL` | el mismo de tu `.env` |
@@ -87,8 +88,10 @@ Las demás (`NODE_ENV`, `JWT_SECRET`, `SEED_OBRAS`, `CLOUDINARY_CARPETA`…) ya 
 
 - **Render gratis se duerme** a los 15 minutos sin visitas: la primera visita tarda 30–60 s. Abrir la tienda un minuto antes de mostrarla.
   Mientras duerme no corre la revisión de pagos de cada minuto: en staging no importa (el webhook lo despierta); en producción, plan pago.
-- **Mails desde Render gratis**: Render puede bloquear el envío por SMTP en el plan gratis. Si no llegan, la compra y el pago igual
-  funcionan (los mails no frenan nada); se resuelve con un servicio de mails por API o con el plan pago.
+- **Mails desde Render gratis**: Render bloquea el envío por SMTP en el plan gratis (confirmado en staging: el formulario de contacto
+  fallaba). Por eso los mails salen por la **API de Brevo** (`BREVO_API_KEY`, plan gratis): crear cuenta en brevo.com, verificar el
+  remitente (el mail de `MAIL_FROM`) en *Remitentes* y generar la clave en *SMTP y API → Claves API*. Si Brevo responde
+  "unrecognised IP address", desactivar el bloqueo por IP en *Seguridad → IP autorizadas* (Render no tiene IP fija).
 - **Actualizar**: cada `git push` a `main` vuelve a publicar los dos. Para ver si salió bien: *Deploys* en Netlify y *Events* en Render.
 - **Datos de staging ≠ tus datos locales**: es otra base. Lo que se cargue en staging queda solo ahí.
 
